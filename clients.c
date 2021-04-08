@@ -7,11 +7,12 @@
 #include <arpa/inet.h>
 
 #define PORT 5555
+#define buf_size 5
 
-void main(){
+void connect_client(){
     int clientSocket;
     struct sockaddr_in serverAddr;
-    char buf[1024];
+    int buf[buf_size] = {7, 5, 4, 1, 9};
 
     clientSocket = socket(PF_INET, SOCK_STREAM, 0);
     printf("Client socket created successfully...\n");
@@ -24,9 +25,16 @@ void main(){
     connect(clientSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
     printf("Connected to server successfully...\n");
 
-    recv(clientSocket, buf, 1024, 0);
-    printf("Data received: %s\n", buf);
+    send(clientSocket, buf, sizeof(int)*buf_size, 0);
 
-
+    printf("Data sent: {");
+    for(int i = 0; i < buf_size; i++){
+        printf("%d ", buf[i]);
+    }
+    printf("}\n");
     printf("Closed connection successfully\n");
+}
+
+void main(){
+    connect_client();
 }
