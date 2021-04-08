@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <stdbool.h>
 
 #define PORT 5555
 #define buf_size 5
@@ -30,11 +31,17 @@ void main(){
     bind(sockfd, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
     printf("Bound to port number %d successfully...\n", PORT);
 
-    listen(sockfd,6);
+    listen(sockfd, 5);
     printf("Listening...\n");
     newSocket = accept(sockfd, (struct sockaddr*)&newAddr, &addr_size);
 
-    recv(newSocket, buf, sizeof(int)*buf_size, 0);
+    bool ready = true;
+    int tester[5] = {1, 0, 1, 0, 1};
+    while(ready){
+        recv(newSocket, buf, sizeof(int)*buf_size, 0);
+        send(newSocket, tester, sizeof(int)*buf_size, 0);
+    }
+    
 
     printf("Data received: { ");
     for(int i = 0; i < buf_size; i++){
