@@ -4,6 +4,6 @@ echo "SUCCESSFULLY COMPILED SERVER"
 gcc clients.c -o clients
 echo "SUCCESSFULLY COMPILED CLIENTS"
 
-./server &
+xterm -hold -e ./server &
 sleep 3
-./clients
+xterm -hold -e ./clients

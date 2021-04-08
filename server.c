@@ -10,6 +10,32 @@
 #define PORT 5555
 #define buf_size 5
 
+int buf[buf_size];
+
+int * sortArray(int array[]){
+    int *lowest;   // Allocating a pointer, allowed?
+    for(int i1 = 0; i1 + 1 < buf_size; i1 ++){
+        lowest = &array[i1];
+        for(int i2 = i1 + 1; i2 < buf_size; i2 ++){
+            if(array[i2] < *lowest){
+                lowest = &array[i2];
+            }
+        }
+        int temp = array[i1]; // Allocating an int, is this allowed?
+        array[i1] = *lowest;
+        *lowest = temp;
+    }
+    return array;
+}
+
+void printBuffer(char s[]){
+    printf("%s: { ", s);
+    for(int i = 0; i < buf_size; i++){
+        printf("%d ", buf[i]);
+    }
+    printf("}\n");
+}
+
 void main(){
     int sockfd;
     struct sockaddr_in serverAddr;
@@ -18,7 +44,6 @@ void main(){
     struct sockaddr_in newAddr;
 
     socklen_t addr_size;
-    int buf[buf_size];
 
     sockfd = socket(PF_INET, SOCK_STREAM, 0);
     printf("Server socket created successfully...\n");
@@ -36,25 +61,12 @@ void main(){
     newSocket = accept(sockfd, (struct sockaddr*)&newAddr, &addr_size);
 
     bool ready = true;
-    int tester[5] = {1, 0, 1, 0, 1};
     while(ready){
         recv(newSocket, buf, sizeof(int)*buf_size, 0);
-        send(newSocket, tester, sizeof(int)*buf_size, 0);
+        printBuffer("Server: Data received");
+        send(newSocket, sortArray(buf), sizeof(int)*buf_size, 0);
+        printBuffer("Server: Data received");
     }
-    
-
-    printf("Data received: { ");
-    for(int i = 0; i < buf_size; i++){
-        printf("%d ", buf[i]);
-    }
-    printf("}\n");
 
     printf("Closed connection successfully\n");
 }
-
-// TO RUN:
-// gcc server.c -o server
-// ./server
-
-// gcc clients.c -o clients
-// ./clients
