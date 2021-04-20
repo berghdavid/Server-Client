@@ -6,20 +6,25 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <stdbool.h>
+#include <pthread.h>
 
 #define PORT 5555
 #define buf_size 5
 
+pthread_mutex_t lock;
 int buf[buf_size];
 
-int * sortArray(int array[]){
+int * sortArray(int array[])
+{
     int *lowest;   // Allocating a pointer, allowed?
-    for(int i1 = 0; i1 + 1 < buf_size; i1 ++){
+    for(int i1 = 0; i1 + 1 < buf_size; i1 ++)
+    {
         lowest = &array[i1];
-        for(int i2 = i1 + 1; i2 < buf_size; i2 ++){
-            if(array[i2] < *lowest){
+        for(int i2 = i1 + 1; i2 < buf_size; i2 ++)
+        {
+            if(array[i2] < *lowest)
                 lowest = &array[i2];
-            }
+
         }
         int temp = array[i1]; // Allocating an int, is this allowed?
         array[i1] = *lowest;
@@ -28,7 +33,8 @@ int * sortArray(int array[]){
     return array;
 }
 
-void printBuffer(char s[]){
+void printBuffer(char s[])
+{
     printf("%s: { ", s);
     for(int i = 0; i < buf_size; i++){
         printf("%d ", buf[i]);
@@ -36,7 +42,8 @@ void printBuffer(char s[]){
     printf("}\n");
 }
 
-void main(){
+int main()
+{
     int sockfd;
     struct sockaddr_in serverAddr;
 
@@ -59,14 +66,19 @@ void main(){
     listen(sockfd, 5);
     printf("Listening...\n");
     newSocket = accept(sockfd, (struct sockaddr*)&newAddr, &addr_size);
+    // Mutex Lock
 
-    bool ready = true;
-    while(ready){
+    // TODO: Fix communication to signal EOF from clients
+    for(int i = 0; i < 2; i++)
+    {
         recv(newSocket, buf, sizeof(int)*buf_size, 0);
         printBuffer("Server: Data received");
         send(newSocket, sortArray(buf), sizeof(int)*buf_size, 0);
-        printBuffer("Server: Data received");
+        printBuffer("Server: Data sent");
     }
-
+    // Mutex Unlock
+    
     printf("Closed connection successfully\n");
+
+    return 0;
 }

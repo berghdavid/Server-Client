@@ -44,8 +44,12 @@ void connect_client2(int *q){
 }
 
 void main(){
-    int b[5] = {5, 20, 30, 2, 4};
-    printBuffer(sortArray(b));
+    //int b[5] = {5, 20, 30, 2, 4};
+    //printBuffer(sortArray(b));
+
+    int a = 3;
+    printf("%d\n", *&a);
+
     //int *pointer = &b[0];
     //printf("b[0]: %p\n", pointer);
     //printf("b[1]: %p\n", pointer + 1);
