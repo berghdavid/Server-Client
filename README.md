@@ -9,12 +9,12 @@ $ ./run.sh
 ```
 
 **For Mac:**
-1. Enter the project folder in a terminal and compile the server and clients file using this command:
+1. Enter the project folder in a terminal and compile the server and clients file using these commands:
 ```
 $ gcc server.c -o server
 $ gcc clients.c -o clients
 ```
-2. Grant guest, user and admin full access to the files by entering the follwing commands:
+2. Grant guest, user and admin full access to the files by entering the following commands:
 ```
 $ chmod 777 ./server
 $ chmod 777 ./clients
