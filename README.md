@@ -24,8 +24,8 @@ $ chmod 777 ./clients
 ```
 $ ./server
 ```
-5. Enter following command into the second terminal:
+5. Enter the following command into the second terminal:
 ```
 $ ./clients
 ```
-5. Success???
+6. Success???
