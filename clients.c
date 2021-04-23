@@ -64,7 +64,7 @@ void sendData(int clientSocket, int data[])
     printf("Closed connection successfully\n");
 }
 
-int connectedSocket()
+int connectSocket()
 {
     int clientSocket;
     struct sockaddr_in serverAddr;
@@ -94,7 +94,7 @@ int main()
     //    return 1;
     //}
 
-    int clientSocket = connectedSocket();
+    int clientSocket = connectSocket();
 
     sendData(clientSocket, data1);
 

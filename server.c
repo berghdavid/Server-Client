@@ -66,17 +66,14 @@ int main()
     listen(sockfd, 5);
     printf("Listening...\n");
     newSocket = accept(sockfd, (struct sockaddr*)&newAddr, &addr_size);
-    // Mutex Lock
 
-    // TODO: Fix communication to signal EOF from clients
     for(int i = 0; i < 2; i++)
     {
-        recv(newSocket, buf, sizeof(int)*buf_size, 0);
+        recv(newSocket, buf, buf_size*sizeof(int), 0);
         printBuffer("Server: Data received");
         send(newSocket, sortArray(buf), sizeof(int)*buf_size, 0);
         printBuffer("Server: Data sent");
     }
-    // Mutex Unlock
     
     printf("Closed connection successfully\n");
 
