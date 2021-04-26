@@ -8,7 +8,7 @@
 #include <stdbool.h>
 #include <pthread.h>
 
-#define PORT 5555
+#define PORT 8989
 #define buf_size 5
 #define data_size 10
 #define threads 3

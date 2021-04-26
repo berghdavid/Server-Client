@@ -8,7 +8,7 @@
 #include <stdbool.h>
 #include <pthread.h>
 
-#define PORT 5555
+#define PORT 8989
 #define buf_size 5
 
 pthread_mutex_t lock;
