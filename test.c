@@ -6,64 +6,41 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <stdbool.h>
+#include <pthread.h>
+#include <unistd.h>
 
 #define buf_size 5
+#define SIZE_T 3
 
-void printBuffer(int d[]){
-    printf("{ ");
-    for(int i = 0; i < buf_size; i++){
-        printf("%d ", d[i]);
+pthread_mutex_t lock;
+
+void do_something(){
+    for(int i = 0; i < 2; i++)
+    {
+        pthread_mutex_lock(&lock);
+        printf("Thread %lu doing something\n", pthread_self());
+        sleep(2);
+        pthread_mutex_unlock(&lock);
     }
-    printf("}\n");
+    
 }
 
-int * sortArray(int array[]){
-    int *lowest;   // Allocating another int, is this allowed?
-    for(int i1 = 0; i1 + 1 < buf_size; i1 ++){
-        lowest = &array[i1];
-        for(int i2 = i1 + 1; i2 < buf_size; i2 ++){
-            if(array[i2] < *lowest){
-                lowest = &array[i2];
-            }
-        }
-        int temp = array[i1];
-        array[i1] = *lowest;
-        *lowest = temp;
+int main(){
+    if(pthread_mutex_init(&lock, NULL) != 0)
+    {
+        printf("Mutex init failed\n");
+        return 1;
     }
-    return array;
-}
+    pthread_t thr[SIZE_T];
 
-void connect_client(int *q){
-    *q += 10;
-}
+    for(int i = 0; i < SIZE_T; i++)
+    {
+        pthread_create(&thr[i], NULL, (void *)do_something, NULL);
+        
+        pthread_detach(thr[i]);
+    }
 
-void connect_client2(int *q){
-    q = q + 1;
-    printf("C FUNC: %p\n", q);
-    printf("C FUNC: %d\n", *q);
-}
+    sleep(15);
 
-void main(){
-    //int b[5] = {5, 20, 30, 2, 4};
-    //printBuffer(sortArray(b));
-
-    int a = 3;
-    printf("%d\n", *&a);
-
-    //int *pointer = &b[0];
-    //printf("b[0]: %p\n", pointer);
-    //printf("b[1]: %p\n", pointer + 1);
-    //printf("b[0]: %d\n", *pointer);
-    //printf("b[1]: %d\n", *(pointer + 1));
-    //int a = 10;
-    //printf("A before: %d\n", a);
-    //connect_client(&a);
-    //printf("A after: %d\n", a);
-
-    //int *c = &b[1];
-    //printf("C before: %p\n", c);
-    //printf("C before: %d\n", *c);
-    //connect_client2(c);
-    //printf("C after: %p\n", c);
-    //printf("C after: %d\n", *c);
+    return 1;
 }
