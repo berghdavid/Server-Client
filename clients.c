@@ -19,7 +19,7 @@ pthread_mutex_t lock;
 struct info
 {
     int id;
-    int data[data_size];
+    int *data;
 };
 
 void print_buf(char s[], int buf[])
@@ -42,8 +42,15 @@ int fill_buf(int *buf, int data[], int pointer)
     return 0;
 }
 
-int send_data(int id, int data[])
+//int send_data(int id, int data[])
+void *send_data(void *socket_desc)
 {
+    struct info *t_info = (struct info*) socket_desc;
+    int id = t_info->id;
+    int data[data_size];
+    for(int i = 0;i < data_size;i++){
+        data[i] = *(t_info->data + i);
+    }
     int client_socket = socket(PF_INET, SOCK_STREAM, 0);
     printf("Client socket created successfully...\n");
 
@@ -102,26 +109,24 @@ int main()
         printf("Failed to init mutex\n");
         return 1;
     }
-    
-    for(int i = 0; i < SIZE_T; i++) {
-        send_data(i, data[i]);
-    }
 
     /*
+    for(int i = 0; i < SIZE_T; i++) {
+        send_data(i, data[i]);
+    }*/
+
+    
     pthread_t thr[SIZE_T];
     for(int i = 0; i < SIZE_T; i++) {
         struct info *inf = (struct info *)malloc(sizeof(struct info));
         inf->id = i;
-        inf->data = d;
-        for(int j = 0; j < data_size; j++) {
-            inf->data[j] = data[3][j];
-        }
+        inf->data = &data[i][0];
 
         pthread_create(&thr[i], NULL, (void *)send_data, (void *)inf);
         pthread_detach(thr[i]);
-    }*/
+    }
 
-    //sleep(8);
+    sleep(8);
 
     return 0;
 }

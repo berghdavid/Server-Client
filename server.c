@@ -95,30 +95,25 @@ void *wait_client(void *socket_desc)
     while(1)
     {
         printf("Thread %d waiting for client\n", t_info->id);
-        
         int client_socket = accept(t_info->server_socket, (struct sockaddr*)&client_addr, &addr_size);
-        printf("Thread %d accepted\n", t_info->id);
-
-        pthread_mutex_lock(&lock_q);
-        enq(t_info->q, t_info->id);
-        printf("Thread %d added to queue\n", t_info->id);
-        pthread_cond_signal(&cond);
-        pthread_mutex_unlock(&lock_q);
         
-        for(int i = 0; i < 2; i++)
-        {
+        for(int i = 0; i < 2; i++) {
+            if(i != 1) {
+                pthread_mutex_lock(&lock_cond);
+                enq(t_info->q, t_info->id);
+                printf("Thread %d added to queue\n", t_info->id);
+                pthread_cond_signal(&cond);
+                pthread_mutex_unlock(&lock_cond);
+            }
+
             pthread_mutex_lock(&lock_cond);
-            while(active_id != t_info->id)
-            {
+            while(active_id != t_info->id) {
                 pthread_cond_wait(&cond, &lock_cond);
             }
             recv(client_socket, buf, BUF_SIZE*sizeof(int), 0);
             printBuffer("Server: Data received", buf);
             send(client_socket, sortArray(buf), sizeof(int)*BUF_SIZE, 0);
-            if(i == 1)
-            {
-                active_id = -1;
-            }
+            pthread_cond_signal(&cond);
             pthread_mutex_unlock(&lock_cond);
             printBuffer("Server: Data sent", buf);
         }
@@ -159,10 +154,7 @@ int main()
         {
             pthread_cond_wait(&cond, &lock_cond);
         }
-
-        pthread_mutex_lock(&lock_q);
         active_id = deq(q);
-        pthread_mutex_unlock(&lock_q);
 
         pthread_cond_signal(&cond);
         pthread_mutex_unlock(&lock_cond);
