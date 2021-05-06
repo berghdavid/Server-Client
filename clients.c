@@ -25,8 +25,7 @@ struct info
 void print_buf(char s[], int buf[])
 {
     printf("%s: {", s);
-    for(int i = 0; i < BUF_SIZE; i++)
-    {
+    for(int i = 0; i < BUF_SIZE; i++) {
         printf("%d ", buf[i]);
     }
     printf("}\n");
@@ -34,8 +33,7 @@ void print_buf(char s[], int buf[])
 
 int fill_buf(int *buf, int data[], int pointer)
 {
-    for(int i = 0; i < BUF_SIZE; i++)
-    {
+    for(int i = 0; i < BUF_SIZE; i++) {
         *buf = data[pointer + i];
         buf++;
     }
@@ -61,8 +59,7 @@ void *send_data(void *socket_desc)
     server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
     if(connect(client_socket, 
-    (struct sockaddr*)&server_addr, sizeof(server_addr)) != 0)
-    {
+    (struct sockaddr*)&server_addr, sizeof(server_addr)) != 0) {
         printf("Unsuccessful connection...\n");
         exit(0);
     }
@@ -75,16 +72,14 @@ void *send_data(void *socket_desc)
     position += BUF_SIZE;
 
     bool ready = true;
-    while(ready)
-    {
+    while(ready) {
         ready = false;
         send(client_socket, buf, sizeof(int)*BUF_SIZE, 0);
         print_buf("Data sent", buf);
         recv(client_socket, buf, sizeof(int)*BUF_SIZE, 0);
         print_buf("Data received", buf);
 
-        if(position + BUF_SIZE <= data_size)
-        {
+        if(position + BUF_SIZE <= data_size) {
             fill_buf(&buf[0], data, position);
             position += BUF_SIZE;
             ready = true;

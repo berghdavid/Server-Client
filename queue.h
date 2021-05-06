@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <pthread.h>
 
 /* standard linked list element */
 struct 
@@ -13,6 +14,7 @@ struct
 queue {
     struct node *head;  /* dequeue this next */
     struct node *tail;  /* enqueue after this */
+    pthread_mutex_t lock;
 };
 
 /* create a new empty queue */
@@ -25,6 +27,11 @@ queue * queueCreate(void)
 
     q->head = q->tail = NULL;
 
+
+    if(pthread_mutex_init(&q->lock, NULL) != 0) {
+        printf("Error initializing queue lock.");
+    }
+
     return q;
 }
 
@@ -32,6 +39,8 @@ queue * queueCreate(void)
 void 
 enq(struct queue *q, int value)
 {
+    pthread_mutex_lock(&q->lock);
+
     struct node *e;
 
     e = (struct node *) malloc(sizeof(struct node));
@@ -52,6 +61,8 @@ enq(struct queue *q, int value)
 
     /* I become the new tail */
     q->tail = e;
+
+    pthread_mutex_unlock(&q->lock);
 }
 
 int
@@ -64,10 +75,11 @@ queueEmpty(const struct queue *q)
 int
 deq(struct queue *q)
 {
+    pthread_mutex_lock(&q->lock);
     int ret;
     struct node *e;
 
-    assert(!queueEmpty(q));
+    assert(q->head != NULL);
 
     ret = q->head->value;
 
@@ -77,6 +89,8 @@ deq(struct queue *q)
 
     free(e);
 
+    pthread_mutex_unlock(&q->lock);
+
     return ret;
 }
 
@@ -84,11 +98,13 @@ deq(struct queue *q)
 void
 queuePrint(struct queue *q)
 {
+    pthread_mutex_lock(&q->lock);
     struct node *e;
 
     for(e = q->head; e != 0; e = e->next) {
         printf("%d ", e->value);
     }
+    pthread_mutex_unlock(&q->lock);
     
     putchar('\n');
 }
@@ -97,34 +113,11 @@ queuePrint(struct queue *q)
 void
 queueDestroy(struct queue *q)
 {
+    pthread_mutex_lock(&q->lock);
     while(!queueEmpty(q)) {
         deq(q);
     }
 
     free(q);
+    pthread_mutex_unlock(&q->lock);
 }
-
-/*
-int
-main(int argc, char **argv)
-{
-    int i;
-    struct queue *q;
-
-    q = queueCreate();
-
-    for(i = 0; i < 5; i++) {
-        printf("enq %d\n", i);
-        enq(q, i);
-        queuePrint(q);
-    }
-
-    while(!queueEmpty(q)) {
-        printf("deq gets %d\n", deq(q));
-        queuePrint(q);
-    }
-
-    queueDestroy(q);
-
-    return 0;
-}*/
