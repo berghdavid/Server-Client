@@ -46,7 +46,7 @@ void *send_data(void *socket_desc)
     struct info *t_info = (struct info*) socket_desc;
     int id = t_info->id;
     int data[data_size];
-    for(int i = 0;i < data_size;i++){
+    for(int i = 0; i < data_size; i++){
         data[i] = *(t_info->data + i);
     }
     int client_socket = socket(PF_INET, SOCK_STREAM, 0);
@@ -67,22 +67,18 @@ void *send_data(void *socket_desc)
 
     int buf[BUF_SIZE];
     int position = 0;
-
-    fill_buf(&buf[0], data, position);
-    position += BUF_SIZE;
-
     bool ready = true;
+
     while(ready) {
-        ready = false;
+        fill_buf(&buf[0], data, position);
+        position += BUF_SIZE;
         send(client_socket, buf, sizeof(int)*BUF_SIZE, 0);
         print_buf("Data sent", buf);
         recv(client_socket, buf, sizeof(int)*BUF_SIZE, 0);
         print_buf("Data received", buf);
 
-        if(position + BUF_SIZE <= data_size) {
-            fill_buf(&buf[0], data, position);
-            position += BUF_SIZE;
-            ready = true;
+        if(position + BUF_SIZE > data_size) {
+            ready = false;
         }
     }
 

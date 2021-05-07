@@ -16,7 +16,7 @@
 
 int buf[BUF_SIZE];
 
-pthread_mutex_t lock_traffic = PTHREAD_MUTEX_INITIALIZER;
+
 pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t lock_cond = PTHREAD_MUTEX_INITIALIZER;
 int active_id = -1;
@@ -97,7 +97,7 @@ void *wait_client(void *socket_desc)
         int client_socket = accept(t_info->server_socket, (struct sockaddr*)&client_addr, &addr_size);
         enq(t_info->q, t_info->id);
         printf("Thread %d added to queue\n", t_info->id);
-        pthread_cond_signal(&cond);
+        pthread_cond_broadcast(&cond);
 
         for(int i = 0; i < 2; i++) {
             pthread_mutex_lock(&lock_cond);
@@ -114,9 +114,9 @@ void *wait_client(void *socket_desc)
                 printf("Thread %d added to queue\n", t_info->id);
             }
 
-            active_id = -1;
             printBuffer("sent data", t_info->id, buf);
-            pthread_cond_signal(&cond);
+            active_id = -1;
+            pthread_cond_broadcast(&cond);
             pthread_mutex_unlock(&lock_cond);
         }
     }
@@ -124,18 +124,17 @@ void *wait_client(void *socket_desc)
 
 void handle_threads(struct queue *q)
 {
-    int status;
     while(1)
     {
         pthread_mutex_lock(&lock_cond);
         while(queueEmpty(q) || active_id != -1)
         {
             pthread_cond_wait(&cond, &lock_cond);
+            queuePrint(q);
         }
         active_id = deq(q);
-        printf("Activating %d\n", active_id);
 
-        pthread_cond_signal(&cond);
+        pthread_cond_broadcast(&cond);
         pthread_mutex_unlock(&lock_cond);
     }
 }
@@ -149,8 +148,7 @@ int main()
     q = queueCreate();
 
     pthread_t thr[SIZE_T];
-    for(int i = 0; i < SIZE_T; i++)
-    {
+    for(int i = 0; i < SIZE_T; i++) {
         struct info *d = (struct info *)malloc(sizeof(struct info));
         d->id = i;
         d->server_socket = server_socket;

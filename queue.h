@@ -99,14 +99,15 @@ void
 queuePrint(struct queue *q)
 {
     pthread_mutex_lock(&q->lock);
+    
     struct node *e;
 
     for(e = q->head; e != 0; e = e->next) {
         printf("%d ", e->value);
     }
-    pthread_mutex_unlock(&q->lock);
-    
     putchar('\n');
+
+    pthread_mutex_unlock(&q->lock);
 }
 
 /* free a queue and all of its elements */
