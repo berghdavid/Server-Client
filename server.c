@@ -12,13 +12,14 @@
 
 #define PORT 8751
 #define BUF_SIZE 5
+#define DATA_SIZE 10
 #define SIZE_T 3
 
 int buf[BUF_SIZE];
 
-
-pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
-pthread_mutex_t lock_cond = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t lock_work = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t cond_work = PTHREAD_COND_INITIALIZER;
+pthread_cond_t cond_queue = PTHREAD_COND_INITIALIZER;
 int active_id = -1;
 
 struct info
@@ -31,11 +32,9 @@ struct info
 int * sortArray(int array[])
 {
     int *lowest;   // Allocating a pointer, allowed?
-    for(int i1 = 0; i1 + 1 < BUF_SIZE; i1 ++)
-    {
+    for(int i1 = 0; i1 + 1 < BUF_SIZE; i1 ++) {
         lowest = &array[i1];
-        for(int i2 = i1 + 1; i2 < BUF_SIZE; i2 ++)
-        {
+        for(int i2 = i1 + 1; i2 < BUF_SIZE; i2 ++) {
             if(array[i2] < *lowest)
                 lowest = &array[i2];
 
@@ -51,8 +50,7 @@ void printBuffer(char s[], int thr_id, int buf[])
 {
     printf("Thread %d ", thr_id);
     printf("%s: { ", s);
-    for(int i = 0; i < BUF_SIZE; i++)
-    {
+    for(int i = 0; i < BUF_SIZE; i++) {
         printf("%d ", buf[i]);
     }
     printf("}\n");
@@ -64,22 +62,20 @@ int create_socket()
     struct sockaddr_in server_addr;
 
     server_socket = socket(PF_INET, SOCK_STREAM, 0);
-    printf("Server socket created successfully...\n");
     memset(&server_addr, '\0', sizeof(server_addr));
 
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(PORT);
     server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
-    if(bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) != 0)
-    {
+    if(bind(server_socket, 
+            (struct sockaddr*)&server_addr, 
+            sizeof(server_addr)) != 0) {
         printf("Unsuccessfully bound to socket...\n");
         exit(0);
     }
-    printf("Bound to port number %d successfully...\n", PORT);
 
     listen(server_socket, 5);
-    printf("Listening...\n");
 
     return server_socket;
 }
@@ -87,67 +83,63 @@ int create_socket()
 void *wait_client(void *socket_desc)
 {
     struct info *t_info = (struct info*) socket_desc;
-
     struct sockaddr_in client_addr;
     socklen_t addr_size;
     
-    while(1)
-    {
-        printf("Thread %d waiting for client\n", t_info->id);
-        int client_socket = accept(t_info->server_socket, (struct sockaddr*)&client_addr, &addr_size);
+    while(1) {
+        int client_socket = accept(t_info->server_socket, 
+                            (struct sockaddr*)&client_addr, 
+                            &addr_size);
         enq(t_info->q, t_info->id);
-        printf("Thread %d added to queue\n", t_info->id);
-        pthread_cond_broadcast(&cond);
+        pthread_cond_signal(&cond_queue);
 
-        for(int i = 0; i < 2; i++) {
-            pthread_mutex_lock(&lock_cond);
+        for(int i = 0; i < DATA_SIZE; i += BUF_SIZE) {
+            pthread_mutex_lock(&lock_work);
             while(active_id != t_info->id) {
-                pthread_cond_wait(&cond, &lock_cond);
+                pthread_cond_wait(&cond_work, &lock_work);
             }
             
             recv(client_socket, buf, BUF_SIZE*sizeof(int), 0);
             printBuffer("received data", t_info->id, buf);
             send(client_socket, sortArray(buf), sizeof(int)*BUF_SIZE, 0);
+            printBuffer("sent data", t_info->id, buf);
 
-            if(i == 0) {
+            /* If client is sending more packets, enqueue */
+            if(i + BUF_SIZE < DATA_SIZE) {
                 enq(t_info->q, t_info->id);
-                printf("Thread %d added to queue\n", t_info->id);
             }
 
-            printBuffer("sent data", t_info->id, buf);
             active_id = -1;
-            pthread_cond_broadcast(&cond);
-            pthread_mutex_unlock(&lock_cond);
+            pthread_cond_signal(&cond_queue);
+            pthread_mutex_unlock(&lock_work);
         }
     }
 }
 
 void handle_threads(struct queue *q)
 {
-    while(1)
-    {
-        pthread_mutex_lock(&lock_cond);
-        while(queueEmpty(q) || active_id != -1)
-        {
-            pthread_cond_wait(&cond, &lock_cond);
-            queuePrint(q);
+    while(1) {
+        pthread_mutex_lock(&lock_work);
+        while(queueEmpty(q) || active_id != -1) {
+            pthread_cond_wait(&cond_queue, &lock_work);
         }
         active_id = deq(q);
 
-        pthread_cond_broadcast(&cond);
-        pthread_mutex_unlock(&lock_cond);
+        pthread_cond_broadcast(&cond_work);
+        pthread_mutex_unlock(&lock_work);
     }
 }
 
 int main()
 {
-    int status;
-    int server_socket = create_socket();
-
     struct queue *q;
     q = queueCreate();
 
+    int server_socket = create_socket();
+
     pthread_t thr[SIZE_T];
+
+    /* Initiate working threads */
     for(int i = 0; i < SIZE_T; i++) {
         struct info *d = (struct info *)malloc(sizeof(struct info));
         d->id = i;
@@ -158,7 +150,17 @@ int main()
         pthread_detach(thr[i]);
     }
     
-    handle_threads(q);
+    /* Distribute work and signal to other threads */
+    while(1) {
+        pthread_mutex_lock(&lock_work);
+        while(queueEmpty(q) || active_id != -1) {
+            pthread_cond_wait(&cond_queue, &lock_work);
+        }
+        active_id = deq(q);
+
+        pthread_cond_broadcast(&cond_work);
+        pthread_mutex_unlock(&lock_work);
+    }
 
     return 0;
 }

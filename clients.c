@@ -11,10 +11,8 @@
 
 #define PORT 8751
 #define BUF_SIZE 5
-#define data_size 10
+#define DATA_SIZE 10
 #define SIZE_T 3
-
-pthread_mutex_t lock;
 
 struct info
 {
@@ -22,9 +20,9 @@ struct info
     int *data;
 };
 
-void print_buf(char s[], int buf[])
+void print_buf(char s[], int id, int buf[])
 {
-    printf("%s: {", s);
+    printf("Thread %d %s: { ", id, s);
     for(int i = 0; i < BUF_SIZE; i++) {
         printf("%d ", buf[i]);
     }
@@ -40,17 +38,14 @@ int fill_buf(int *buf, int data[], int pointer)
     return 0;
 }
 
-//int send_data(int id, int data[])
 void *send_data(void *socket_desc)
 {
     struct info *t_info = (struct info*) socket_desc;
-    int id = t_info->id;
-    int data[data_size];
-    for(int i = 0; i < data_size; i++){
+    int data[DATA_SIZE];
+    for(int i = 0; i < DATA_SIZE; i++){
         data[i] = *(t_info->data + i);
     }
     int client_socket = socket(PF_INET, SOCK_STREAM, 0);
-    printf("Client socket created successfully...\n");
 
     struct sockaddr_in server_addr;
     memset(&server_addr, '\0', sizeof(server_addr));
@@ -58,12 +53,11 @@ void *send_data(void *socket_desc)
     server_addr.sin_port = htons(PORT);
     server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
-    if(connect(client_socket, 
-    (struct sockaddr*)&server_addr, sizeof(server_addr)) != 0) {
+    if(connect(client_socket, (struct sockaddr*)&server_addr, 
+    sizeof(server_addr)) != 0) {
         printf("Unsuccessful connection...\n");
         exit(0);
     }
-    printf("Thread %d connected to server successfully...\n", id);
 
     int buf[BUF_SIZE];
     int position = 0;
@@ -73,39 +67,25 @@ void *send_data(void *socket_desc)
         fill_buf(&buf[0], data, position);
         position += BUF_SIZE;
         send(client_socket, buf, sizeof(int)*BUF_SIZE, 0);
-        print_buf("Data sent", buf);
+        //print_buf("sent", t_info->id, buf);
         recv(client_socket, buf, sizeof(int)*BUF_SIZE, 0);
-        print_buf("Data received", buf);
+        print_buf("received", t_info->id, buf);
 
-        if(position + BUF_SIZE > data_size) {
+        if(position + BUF_SIZE > DATA_SIZE) {
             ready = false;
         }
     }
 
-    printf("Closed connection successfully\n");
     return 0;
 }
 
 int main()
 {
-    int status;
-
-    int data[3][data_size] = {
+    int data[3][DATA_SIZE] = {
         {7, 5, 4, 1, 9, 8, 9, 7, 5, 4},
         {10, 50, 20, 10, 25, 76, 89, 20, 20, 50},
         {500, 400, 400, 100, 100, 700, 500, 400, 100, 900}
     };
-
-    if(pthread_mutex_init(&lock, NULL) != 0){
-        printf("Failed to init mutex\n");
-        return 1;
-    }
-
-    /*
-    for(int i = 0; i < SIZE_T; i++) {
-        send_data(i, data[i]);
-    }*/
-
     
     pthread_t thr[SIZE_T];
     for(int i = 0; i < SIZE_T; i++) {
