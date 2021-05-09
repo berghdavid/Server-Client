@@ -15,11 +15,11 @@
 #define DATA_SIZE 10
 #define SIZE_T 3
 
-int buf[BUF_SIZE];
-
 pthread_mutex_t lock_work = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond_work = PTHREAD_COND_INITIALIZER;
 pthread_cond_t cond_queue = PTHREAD_COND_INITIALIZER;
+
+int buf[BUF_SIZE];
 int active_id = -1;
 
 struct info
@@ -31,7 +31,7 @@ struct info
 
 int * sortArray(int array[])
 {
-    int *lowest;   // Allocating a pointer, allowed?
+    int *lowest;
     for(int i1 = 0; i1 + 1 < BUF_SIZE; i1 ++) {
         lowest = &array[i1];
         for(int i2 = i1 + 1; i2 < BUF_SIZE; i2 ++) {
@@ -39,7 +39,7 @@ int * sortArray(int array[])
                 lowest = &array[i2];
 
         }
-        int temp = array[i1]; // Allocating an int, is this allowed?
+        int temp = array[i1];
         array[i1] = *lowest;
         *lowest = temp;
     }
@@ -93,6 +93,7 @@ void *wait_client(void *socket_desc)
         enq(t_info->q, t_info->id);
         pthread_cond_signal(&cond_queue);
 
+        /* Iterate for all integers buf[i] in buf[] */
         for(int i = 0; i < DATA_SIZE; i += BUF_SIZE) {
             pthread_mutex_lock(&lock_work);
             while(active_id != t_info->id) {
@@ -104,7 +105,7 @@ void *wait_client(void *socket_desc)
             send(client_socket, sortArray(buf), sizeof(int)*BUF_SIZE, 0);
             printBuffer("sent data", t_info->id, buf);
 
-            /* If client is sending more packets, enqueue */
+            /* If client has more packets to send, enqueue */
             if(i + BUF_SIZE < DATA_SIZE) {
                 enq(t_info->q, t_info->id);
             }
@@ -116,30 +117,16 @@ void *wait_client(void *socket_desc)
     }
 }
 
-void handle_threads(struct queue *q)
-{
-    while(1) {
-        pthread_mutex_lock(&lock_work);
-        while(queueEmpty(q) || active_id != -1) {
-            pthread_cond_wait(&cond_queue, &lock_work);
-        }
-        active_id = deq(q);
-
-        pthread_cond_broadcast(&cond_work);
-        pthread_mutex_unlock(&lock_work);
-    }
-}
-
 int main()
 {
+    int server_socket = create_socket();
+
+    /* Build FIFO queue for threads with work */
     struct queue *q;
     q = queueCreate();
 
-    int server_socket = create_socket();
-
+    /* Initiate threads which handle clients */
     pthread_t thr[SIZE_T];
-
-    /* Initiate working threads */
     for(int i = 0; i < SIZE_T; i++) {
         struct info *d = (struct info *)malloc(sizeof(struct info));
         d->id = i;
@@ -150,7 +137,7 @@ int main()
         pthread_detach(thr[i]);
     }
     
-    /* Distribute work and signal to other threads */
+    /* Distribute signal other threads in queue order */
     while(1) {
         pthread_mutex_lock(&lock_work);
         while(queueEmpty(q) || active_id != -1) {

@@ -41,10 +41,6 @@ int fill_buf(int *buf, int data[], int pointer)
 void *send_data(void *socket_desc)
 {
     struct info *t_info = (struct info*) socket_desc;
-    int data[DATA_SIZE];
-    for(int i = 0; i < DATA_SIZE; i++){
-        data[i] = *(t_info->data + i);
-    }
     int client_socket = socket(PF_INET, SOCK_STREAM, 0);
 
     struct sockaddr_in server_addr;
@@ -60,20 +56,12 @@ void *send_data(void *socket_desc)
     }
 
     int buf[BUF_SIZE];
-    int position = 0;
-    bool ready = true;
 
-    while(ready) {
-        fill_buf(&buf[0], data, position);
-        position += BUF_SIZE;
+    for(int i = 0; i < DATA_SIZE; i += BUF_SIZE) {
+        fill_buf(&buf[0], t_info->data, i);
         send(client_socket, buf, sizeof(int)*BUF_SIZE, 0);
-        //print_buf("sent", t_info->id, buf);
         recv(client_socket, buf, sizeof(int)*BUF_SIZE, 0);
         print_buf("received", t_info->id, buf);
-
-        if(position + BUF_SIZE > DATA_SIZE) {
-            ready = false;
-        }
     }
 
     return 0;
@@ -81,7 +69,7 @@ void *send_data(void *socket_desc)
 
 int main()
 {
-    int data[3][DATA_SIZE] = {
+    int data[SIZE_T][DATA_SIZE] = {
         {7, 5, 4, 1, 9, 8, 9, 7, 5, 4},
         {10, 50, 20, 10, 25, 76, 89, 20, 20, 50},
         {500, 400, 400, 100, 100, 700, 500, 400, 100, 900}
