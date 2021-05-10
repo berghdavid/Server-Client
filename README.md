@@ -7,13 +7,7 @@ Server/Client implementation in C.
 $ chmod 777 ./run_server.sh
 $ chmod 777 ./run_clients.sh
 ```
-2. Enter the project the folder in 2 separate terminals and then enter the following commands:
-```
-$ ./run_server.sh
-```
-```
-$ ./run_clients.sh
-```
+2. Enter the project the folder in two separate terminals.
 3. Enter the following command into the first terminal:
 ```
 $ ./run_server.sh
