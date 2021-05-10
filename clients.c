@@ -12,14 +12,34 @@
 #define PORT 8751
 #define BUF_SIZE 5
 #define DATA_SIZE 10
-#define SIZE_T 3
+#define T_SIZE 3
 
+char RECEIVED[] = "received";
+char SENT[] = "sent";
+
+/* Used to store all necessary data with a pthread */
 struct info
 {
     int id;
     int *data;
+    struct sockaddr_in server_addr;
 };
 
+struct sockaddr_in get_server_addr()
+{
+    struct sockaddr_in server_addr;
+    memset(&server_addr, '\0', sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(PORT);
+    server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+    return server_addr;
+}
+
+/** Prints the received/sent array of ints.
+ * @param s String which is either "received" or "sent".
+ * @param thr_id Int ID of thread.
+ * @param buf Array of ints to be printed.
+*/
 void print_buf(char s[], int id, int buf[])
 {
     printf("Thread %d %s: { ", id, s);
@@ -43,14 +63,9 @@ void *send_data(void *socket_desc)
     struct info *t_info = (struct info*) socket_desc;
     int client_socket = socket(PF_INET, SOCK_STREAM, 0);
 
-    struct sockaddr_in server_addr;
-    memset(&server_addr, '\0', sizeof(server_addr));
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(PORT);
-    server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-
-    if(connect(client_socket, (struct sockaddr*)&server_addr, 
-    sizeof(server_addr)) != 0) {
+    if(connect(client_socket, 
+            (struct sockaddr*)&t_info->server_addr, 
+            sizeof(t_info->server_addr)) != 0) {
         printf("Unsuccessful connection...\n");
         exit(0);
     }
@@ -59,9 +74,11 @@ void *send_data(void *socket_desc)
 
     for(int i = 0; i < DATA_SIZE; i += BUF_SIZE) {
         fill_buf(&buf[0], t_info->data, i);
+
         send(client_socket, buf, sizeof(int)*BUF_SIZE, 0);
+        print_buf(SENT, t_info->id, buf);
         recv(client_socket, buf, sizeof(int)*BUF_SIZE, 0);
-        print_buf("received", t_info->id, buf);
+        print_buf(RECEIVED, t_info->id, buf);
     }
 
     return 0;
@@ -69,23 +86,31 @@ void *send_data(void *socket_desc)
 
 int main()
 {
-    int data[SIZE_T][DATA_SIZE] = {
+    int data[T_SIZE][DATA_SIZE] = {
         {7, 5, 4, 1, 9, 8, 9, 7, 5, 4},
         {10, 50, 20, 10, 25, 76, 89, 20, 20, 50},
         {500, 400, 400, 100, 100, 700, 500, 400, 100, 900}
     };
+
+    struct sockaddr_in server_addr = get_server_addr();
     
-    pthread_t thr[SIZE_T];
-    for(int i = 0; i < SIZE_T; i++) {
+    /* Start 'T_SIZE' different client threads */
+    pthread_t thr[T_SIZE];
+    for(int i = 0; i < T_SIZE; i++) {
         struct info *inf = (struct info *)malloc(sizeof(struct info));
         inf->id = i;
         inf->data = &data[i][0];
+        inf->server_addr = server_addr;
 
         pthread_create(&thr[i], NULL, (void *)send_data, (void *)inf);
-        pthread_detach(thr[i]);
+        //sleep(1); // Uncomment when testing queue orders
     }
 
-    sleep(8);
+    /* Wait for all threads, then join them */
+    for(int i = 0; i < T_SIZE; i++) {
+        if(pthread_join(thr[i], NULL) != 0)
+            printf("Could not join with thread %d\n", i);
+    }
 
     return 0;
 }

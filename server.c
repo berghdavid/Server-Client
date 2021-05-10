@@ -21,7 +21,10 @@ pthread_cond_t cond_queue = PTHREAD_COND_INITIALIZER;
 
 int buf[BUF_SIZE];
 int active_id = -1;
+char RECEIVED[] = "received";
+char SENT[] = "sent";
 
+/* Used to store all necessary data with a pthread */
 struct info
 {
     int id;
@@ -29,27 +32,36 @@ struct info
     struct queue* q;
 };
 
-int * sortArray(int array[])
+/**
+ * Sorts and returns an array using insertion sort. 
+ * Insertion sort is fast for small arrays.
+ */
+int * sort_array()
 {
-    int *lowest;
-    for(int i1 = 0; i1 + 1 < BUF_SIZE; i1 ++) {
-        lowest = &array[i1];
-        for(int i2 = i1 + 1; i2 < BUF_SIZE; i2 ++) {
-            if(array[i2] < *lowest)
-                lowest = &array[i2];
+    int key, i, j;
 
+    for(i = 1; i < BUF_SIZE; i++) {
+        key = buf[i];
+        j = i - 1;
+
+        while(j >= 0 && buf[j] > key) {
+            buf[j + 1] = buf[j];
+            j = j - 1;
         }
-        int temp = array[i1];
-        array[i1] = *lowest;
-        *lowest = temp;
+        buf[j + 1] = key;
     }
-    return array;
+    return buf;
 }
 
-void printBuffer(char s[], int thr_id, int buf[])
+/** Prints the received/sent array of ints.
+ * @param s String which is either "received" or "sent".
+ * @param thr_id Int ID of thread.
+ * @param buf Array of ints to be printed.
+*/
+void print_buf(char s[], int thr_id, int buf[])
 {
     printf("Thread %d ", thr_id);
-    printf("%s: { ", s);
+    printf("%s data: { ", s);
     for(int i = 0; i < BUF_SIZE; i++) {
         printf("%d ", buf[i]);
     }
@@ -80,6 +92,10 @@ int create_socket()
     return server_socket;
 }
 
+/** 
+ * Waits for a client to connect to, then communicates
+ * with the connected client.
+ */
 void *wait_client(void *socket_desc)
 {
     struct info *t_info = (struct info*) socket_desc;
@@ -93,23 +109,28 @@ void *wait_client(void *socket_desc)
         enq(t_info->q, t_info->id);
         pthread_cond_signal(&cond_queue);
 
-        /* Iterate for all integers buf[i] in buf[] */
+
+        /* Iterate through all packets of arrays to be received */
         for(int i = 0; i < DATA_SIZE; i += BUF_SIZE) {
+            //sleep(3); // Uncomment when testing queue orders
+
             pthread_mutex_lock(&lock_work);
             while(active_id != t_info->id) {
-                pthread_cond_wait(&cond_work, &lock_work);
+                /* Wait for main thread to broadcast */
+                pthread_cond_wait(&cond_work, &lock_work); // 
             }
             
             recv(client_socket, buf, BUF_SIZE*sizeof(int), 0);
-            printBuffer("received data", t_info->id, buf);
-            send(client_socket, sortArray(buf), sizeof(int)*BUF_SIZE, 0);
-            printBuffer("sent data", t_info->id, buf);
+            print_buf(RECEIVED, t_info->id, buf);
+            send(client_socket, sort_array(), sizeof(int)*BUF_SIZE, 0);
+            print_buf(SENT, t_info->id, buf);
 
             /* If client has more packets to send, enqueue */
-            if(i + BUF_SIZE < DATA_SIZE) {
+            if(i < DATA_SIZE - BUF_SIZE) {
                 enq(t_info->q, t_info->id);
             }
 
+            /* Unlock and signal the main thread */
             active_id = -1;
             pthread_cond_signal(&cond_queue);
             pthread_mutex_unlock(&lock_work);
@@ -125,7 +146,7 @@ int main()
     struct queue *q;
     q = queueCreate();
 
-    /* Initiate threads which handle clients */
+    /* Start threads which handle clients */
     pthread_t thr[SIZE_T];
     for(int i = 0; i < SIZE_T; i++) {
         struct info *d = (struct info *)malloc(sizeof(struct info));
@@ -136,8 +157,10 @@ int main()
         pthread_create(&thr[i], NULL, (void *)wait_client, (void *)d);
         pthread_detach(thr[i]);
     }
+
+    printf("Listening for clients...\n");
     
-    /* Distribute signal other threads in queue order */
+    /* Distribute work by signalling the threads in queue */
     while(1) {
         pthread_mutex_lock(&lock_work);
         while(queueEmpty(q) || active_id != -1) {

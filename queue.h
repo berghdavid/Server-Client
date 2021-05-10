@@ -3,7 +3,7 @@
 #include <assert.h>
 #include <pthread.h>
 
-/* standard linked list element */
+/* Standard linked list element */
 struct 
 node {
     struct node *next;
@@ -12,12 +12,12 @@ node {
 
 struct 
 queue {
-    struct node *head;  /* dequeue this next */
-    struct node *tail;  /* enqueue after this */
+    struct node *head;  /* Dequeue this next */
+    struct node *tail;  /* Enqueue after this */
     pthread_mutex_t lock;
 };
 
-/* create a new empty queue */
+/* Create a new empty queue */
 struct 
 queue * queueCreate(void)
 {
@@ -35,7 +35,7 @@ queue * queueCreate(void)
     return q;
 }
 
-/* add a new value to back of queue */
+/* Add a new value to back of queue */
 void 
 enq(struct queue *q, int value)
 {
@@ -71,7 +71,7 @@ queueEmpty(const struct queue *q)
     return (q->head == NULL);
 }
 
-/* remove and return value from front of queue */
+/* Remove and return value from front of queue */
 int
 deq(struct queue *q)
 {
@@ -83,7 +83,7 @@ deq(struct queue *q)
 
     ret = q->head->value;
 
-    /* patch out first element */
+    /* Patch out first element */
     e = q->head;
     q->head = e->next;
 
@@ -94,7 +94,7 @@ deq(struct queue *q)
     return ret;
 }
 
-/* print contents of queue on a single line, head first */
+/* Print contents of queue on a single line, head first */
 void
 queuePrint(struct queue *q)
 {
@@ -110,7 +110,7 @@ queuePrint(struct queue *q)
     pthread_mutex_unlock(&q->lock);
 }
 
-/* free a queue and all of its elements */
+/* Free a queue and all of its elements */
 void
 queueDestroy(struct queue *q)
 {
