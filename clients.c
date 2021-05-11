@@ -9,13 +9,12 @@
 #include <pthread.h>
 #include <unistd.h>
 
-#define PORT 8751
-#define BUF_SIZE 5
-#define DATA_SIZE 10
-#define T_SIZE 3
-
-char RECEIVED[] = "received";
-char SENT[] = "sent";
+#define PORT 8751       // Port for communication, use any available port
+#define BUF_SIZE 5      // Size of buffer array
+#define DATA_SIZE 10    // Total size of client array
+#define T_SIZE 3        // Number of threads handling clients (N)
+#define RECEIVED "received"
+#define SENT "sent"
 
 /* Used to store all necessary data with a pthread */
 struct info
@@ -36,6 +35,7 @@ struct sockaddr_in get_server_addr()
 }
 
 /** Prints the received/sent array of ints.
+ * 
  * @param s String which is either "received" or "sent".
  * @param thr_id Int ID of thread.
  * @param buf Array of ints to be printed.
@@ -49,10 +49,19 @@ void print_buf(char s[], int id, int buf[])
     printf("}\n");
 }
 
-int fill_buf(int *buf, int data[], int pointer)
+/**
+ * Used to fill an array with integers before sending.
+ * 
+ * @param buf Array to be filled.
+ * @param data Array to copy from. Size of array must
+ * be greater than the given 'index' + 'BUF_SIZE'
+ * @param index Determines the starting index in *buf 
+ * from which the integers will be copied from.
+ */
+int fill_buf(int *buf, int data[], int index)
 {
     for(int i = 0; i < BUF_SIZE; i++) {
-        *buf = data[pointer + i];
+        *buf = data[index + i];
         buf++;
     }
     return 0;
@@ -106,7 +115,7 @@ int main()
         //sleep(1); // Uncomment when testing queue orders
     }
 
-    /* Wait for all threads, then join them */
+    /* Wait for all threads, then join them when finished */
     for(int i = 0; i < T_SIZE; i++) {
         if(pthread_join(thr[i], NULL) != 0)
             printf("Could not join with thread %d\n", i);

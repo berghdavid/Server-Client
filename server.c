@@ -10,10 +10,13 @@
 #include <unistd.h>
 #include "queue.h"
 
-#define PORT 8751
-#define BUF_SIZE 5
-#define DATA_SIZE 10
-#define SIZE_T 3
+#define PORT 8751       // Port for communication, use any available port
+#define BUF_SIZE 5      // Size of buffer array
+#define DATA_SIZE 10    // Total size of client array
+#define T_SIZE 3        // Number of threads handling clients (N)
+#define BACKLOG 5       // Max amount of pending connections for 'listen()'
+#define RECEIVED "received"
+#define SENT "sent"
 
 pthread_mutex_t lock_work = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond_work = PTHREAD_COND_INITIALIZER;
@@ -21,10 +24,8 @@ pthread_cond_t cond_queue = PTHREAD_COND_INITIALIZER;
 
 int buf[BUF_SIZE];
 int active_id = -1;
-char RECEIVED[] = "received";
-char SENT[] = "sent";
 
-/* Used to store all necessary data with a pthread */
+/** Stores all necessary data for a pthread. */
 struct info
 {
     int id;
@@ -34,7 +35,7 @@ struct info
 
 /**
  * Sorts and returns an array using insertion sort. 
- * Insertion sort is fast for small arrays.
+ * Insertion sort is fast and easy for small arrays.
  */
 int * sort_array()
 {
@@ -54,6 +55,7 @@ int * sort_array()
 }
 
 /** Prints the received/sent array of ints.
+ * 
  * @param s String which is either "received" or "sent".
  * @param thr_id Int ID of thread.
  * @param buf Array of ints to be printed.
@@ -87,7 +89,7 @@ int create_socket()
         exit(0);
     }
 
-    listen(server_socket, 5);
+    listen(server_socket, BACKLOG);
 
     return server_socket;
 }
@@ -147,8 +149,8 @@ int main()
     q = queueCreate();
 
     /* Start threads which handle clients */
-    pthread_t thr[SIZE_T];
-    for(int i = 0; i < SIZE_T; i++) {
+    pthread_t thr[T_SIZE];
+    for(int i = 0; i < T_SIZE; i++) {
         struct info *d = (struct info *)malloc(sizeof(struct info));
         d->id = i;
         d->server_socket = server_socket;
