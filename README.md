@@ -1,7 +1,7 @@
 # Server-Client
 Server/Client implementation in C.
 
-**For Linux/Mac:**
+**For Ubuntu:**
 1. Enter the project folder in a terminal and grant guest, user and admin full access to the files by entering the following commands:
 ```
 $ chmod 777 ./run_server.sh
