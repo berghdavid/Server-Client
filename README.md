@@ -1,31 +1,19 @@
 # Server-Client
 Server/Client implementation in C.
 
-**For Linux:**
-
-1. Enter the project the folder in a terminal and then enter the following command:
+**For Linux/Mac:**
+1. Enter the project folder in a terminal and grant guest, user and admin full access to the files by entering the following commands:
 ```
-$ ./run.sh
+$ chmod 777 ./run_server.sh
+$ chmod 777 ./run_clients.sh
 ```
-
-**For Mac:**
-1. Enter the project folder in a terminal and compile the server and clients file using these commands:
+2. Enter the project the folder in two separate terminals.
+3. Enter the following command into the first terminal:
 ```
-$ gcc server.c -o server
-$ gcc clients.c -o clients
+$ ./run_server.sh
 ```
-2. Grant guest, user and admin full access to the files by entering the following commands:
+4. Enter the following command into the second terminal:
 ```
-$ chmod 777 ./server
-$ chmod 777 ./clients
+$ ./run_clients.sh
 ```
-3. Open 2 new terminals and enter the Server-Client folder in each one of them
-4. Enter the following command into the first terminal:
-```
-$ ./server
-```
-5. Enter the following command into the second terminal:
-```
-$ ./clients
-```
-6. Success???
+5. Success???
