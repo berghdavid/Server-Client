@@ -1,18 +1,7 @@
 # Server-Client
-Server/Client implementation in C.
+Multithreaded server/client implementation in C using Unix pthread.
+Based on a task for a work application.
 
-**For Ubuntu:**
-1. Enter the project folder in a terminal and grant guest, user and admin full access to the files by entering the following commands:
-```
-$ chmod 755 ./run_server.sh
-$ chmod 755 ./run_clients.sh
-```
-2. Enter the project the folder in two separate terminals.
-3. Enter the following command into the first terminal:
-```
-$ ./run_server.sh
-```
-4. Enter the following command into the second terminal:
-```
-$ ./run_clients.sh
-```
+**To run**
+Enter the project the folder in two separate terminals.
+Run `./run_server.sh` in the first window and run `./run_clients.sh` in the second.
