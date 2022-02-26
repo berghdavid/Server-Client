@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include <pthread.h>
 #include <unistd.h>
+
 #include "queue.h"
 
 #define PORT 8751       // Port for communication, use any available port
@@ -107,7 +108,7 @@ void *wait_client(void *socket_desc)
     
     while(1) {
         int client_socket = accept(t_info->server_socket, 
-                            (struct sockaddr*)&client_addr, 
+                            (struct sockaddr*) &client_addr, 
                             &addr_size);
         enq(t_info->q, t_info->id);
         pthread_cond_signal(&cond_queue);
