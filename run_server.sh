@@ -1,3 +1,4 @@
 #!/bin/bash
-gcc -pthread -o server server.c
-./server
+
+cd src && gcc -pthread -o server server.c && \
+./server && rm server

@@ -1,3 +1,4 @@
 #!/bin/bash
-gcc -pthread -o clients clients.c
-./clients
+
+cd src && gcc -pthread -o clients clients.c && \
+./clients && rm clients

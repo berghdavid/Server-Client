@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -140,33 +141,66 @@ void *wait_client(void *socket_desc)
     }
 }
 
+/**
+ * Reads user input and toggles quit to true if 'exit' is entered.
+ * This joins all the threads and shutdowns the server.
+ */
+void shutdown_server(bool *quit)
+{
+    char str[100];
+
+    while(!*quit) {
+        printf("Enter 'exit' to shutdown server.\n");
+        scanf("%s", str);
+        if(strcmp(str, "exit\n")) {
+            *quit = true;
+            pthread_cond_signal(&cond_queue);
+        }
+    }
+}
+
 int main()
 {
-    int server_socket = create_socket();
-
     /* Build FIFO queue for threads with work */
     struct queue *q;
     q = queueCreate();
 
+    int server_socket = create_socket();
+    pthread_t thr[T_SIZE + 1];
+    bool quit = false;
+
+
     /* Start threads which handle clients */
-    pthread_t thr[T_SIZE];
     for(int i = 0; i < T_SIZE; i++) {
-        struct info *d = (struct info *)malloc(sizeof(struct info));
+        struct info *d = (struct info *) malloc(sizeof(struct info));
         d->id = i;
         d->server_socket = server_socket;
         d->q = q;
 
-        pthread_create(&thr[i], NULL, (void *)wait_client, (void *)d);
+        pthread_create(&thr[i], NULL, (void *) wait_client, (void *)d);
         pthread_detach(thr[i]);
     }
 
+    /* Start shutdown thread */
+    pthread_create(&thr[T_SIZE], NULL, (void *) shutdown_server, &quit);
+    pthread_detach(thr[T_SIZE]);
+
     printf("Listening for clients...\n");
-    
+
     /* Distribute work by signalling the threads in queue */
     while(1) {
         pthread_mutex_lock(&lock_work);
         while(queueEmpty(q) || active_id != -1) {
             pthread_cond_wait(&cond_queue, &lock_work);
+            if(quit) {
+                printf("Shutting down server...\n");
+                for(int i = 0; i < T_SIZE + 1; i++) {
+                    pthread_join(thr[i], NULL);
+                }
+                queueDestroy(q);
+
+                return 0;
+            }
         }
         active_id = deq(q);
 
