@@ -4,4 +4,5 @@ Based on a task for a work application.
 
 ## To run
 Enter the project the folder in two separate terminals.
-Run `./run_server.sh` in the first window and `./run_clients.sh` in the second.
+- `make run_server` builds and runs the server application.
+- `make run_clients` builds and runs clients sending requests to the server.
