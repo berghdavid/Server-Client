@@ -1,6 +1,6 @@
 CC=gcc
-CFLAGS=-Wall -pedantic-errors
-LDFLAGS=-lm
+CFLAGS=-Wall -pedantic-errors -pthread
+LDFLAGS=-lm -pthread
 OPT_FLAGS=-O3
 DEBUG_FLAGS=-ggdb3
 
