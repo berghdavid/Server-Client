@@ -1,14 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
 #include <stdbool.h>
 #include <pthread.h>
-#include <unistd.h>
 
 #include "queue.h"
 #include "server.h"
@@ -77,7 +72,7 @@ int create_socket()
 	return server_socket;
 }
 
-void* wait_client(void* socket_desc)
+void* wait_client(void* arg)
 {
 	struct sockaddr_in	client_addr;
 	socklen_t		addr_size;
@@ -85,7 +80,7 @@ void* wait_client(void* socket_desc)
 	int			client_socket;
 	int			i;
 
-	t_info = (struct info*) socket_desc;
+	t_info = (struct info*) arg;
 	
 	while(1) {
 		client_socket = accept(t_info->server_socket, 
@@ -94,8 +89,6 @@ void* wait_client(void* socket_desc)
 		pthread_cond_signal(&cond_queue);
 
 		for (i = 0; i < DATA_SIZE; i += BUF_SIZE) {
-			sleep(3); // Uncomment when testing queue orders
-
 			pthread_mutex_lock(&lock_work);
 			while (active_id != t_info->id) {
 				/* Wait for main thread to broadcast */
@@ -104,7 +97,7 @@ void* wait_client(void* socket_desc)
 			
 			recv(client_socket, buf, BUF_SIZE * sizeof(int), 0);
 			print_buf("received", t_info->id, buf);
-			send(client_socket, sort_array(), sizeof(int) * BUF_SIZE, 0);
+			send(client_socket, sort_array(), BUF_SIZE * sizeof(int), 0);
 			print_buf("sent", t_info->id, buf);
 
 			/* If client has more packets to send, enqueue */

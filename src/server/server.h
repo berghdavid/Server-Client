@@ -1,7 +1,6 @@
 #ifndef SERVER_H
 #define SERVER_H
 
-#include <stdbool.h>
 #include "queue.h"
 
 typedef struct info info;
@@ -34,13 +33,13 @@ int create_socket();
  * Waits for a client to connect to, then communicates
  * with the connected client.
  */
-void* wait_client(void* socket_desc);
+void* wait_client(void* arg);
 
 /**
  * Reads user input and toggles quit to true if 'exit' is entered.
  * This joins all the threads and shutdowns the server.
  */
-void* shutdown_server(void* quit);
+void* shutdown_server(void* arg);
 
 int main();
 

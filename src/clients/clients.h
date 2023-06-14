@@ -1,25 +1,16 @@
 #ifndef CLIENTS_H
 #define CLIENTS_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <sys/types.h>
 #include <netinet/in.h>
-#include <arpa/inet.h>
-#include <stdbool.h>
-#include <pthread.h>
-#include <unistd.h>
 
 typedef struct info info;
 
 /* Used to store all necessary data with a pthread */
 struct info
 {
-	int			id;
-	int*			data;
 	struct sockaddr_in	server_addr;
+	int*			data;
+	int			id;
 };
 
 struct sockaddr_in get_server_addr();

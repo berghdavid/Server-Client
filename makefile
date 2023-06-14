@@ -7,7 +7,7 @@ DEBUG_FLAGS=-ggdb3
 CLIENTS = $(wildcard src/clients/*.c)
 SERVER = $(wildcard src/server/*.c)
 
-all: clients server
+all: clients server debug_server debug_clients
 
 run_clients: clients
 	./clients
@@ -34,5 +34,7 @@ debug_server: $(CLIENTS)
 	$(CC) -o d_server $(DEBUG_FLAGS) $(CFLAGS) $(CLIENTS) $(LDFLAGS)
 
 clean: all
-	rm main
-	rm debug
+	rm server
+	rm d_server
+	rm clients
+	rm d_clients

@@ -1,13 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
-#include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <stdbool.h>
 #include <pthread.h>
-#include <unistd.h>
 #include "clients.h"
 
 #define PORT 8751	/* Use any available port			*/
@@ -96,9 +93,7 @@ int main()
 		inf->id = i;
 		inf->data = &data[i][0];
 		inf->server_addr = server_addr;
-
 		pthread_create(&thr[i], NULL, send_data, inf);
-		sleep(1); // Uncomment when testing queue orders
 	}
 
 	/* Wait for all threads, then join them when finished */

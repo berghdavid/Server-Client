@@ -5,7 +5,7 @@ typedef struct node node;
 typedef struct queue queue;
 
 /**
- * @brief Linked list element
+ * @brief Fifo list element
  */
 struct node {
 	node*	next;
@@ -16,9 +16,9 @@ struct node {
  * @brief Fifo queue
  */
 struct queue {
-    pthread_mutex_t	lock;	/* Mutex for multithreaded queue access	*/
-    node*		head;	/* Dequeue this next			*/
-    node*		tail;	/* Enqueue after this			*/
+	pthread_mutex_t	lock;	/* Mutex for multithreaded queue access	*/
+	node*		head;	/* Dequeue this next			*/
+	node*		tail;	/* Enqueue after this			*/
 };
 
 /* Create a new empty queue */
